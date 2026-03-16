@@ -1,0 +1,10 @@
+public Mono<OrderResponse> processOrder(OrderRequest request) {
+    return eventStore.existsByCorrelationId(request.getCorrelationId())
+            .flatMap(exists -> {
+                if (exists) {
+                    return Mono.error(new DuplicateRequestException("Order already processed"));
+                }
+                return matchingEngine.match(request)
+                        .flatMap(result -> eventStore.save(new OrderPlacedEvent(request, result)));
+            });
+}
