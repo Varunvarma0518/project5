@@ -1,0 +1,12 @@
+@CircuitBreaker(name = "marketDataApi", fallbackMethod = "getCachePrice")
+public Mono<Double> getExternalPrice(String symbol) {
+    return webClient.get()
+            .uri("/prices/{symbol}", symbol)
+            .retrieve()
+            .bodyToMono(Double.class);
+}
+
+// Fallback: Return last known price from Redis if API is down
+public Mono<Double> getCachePrice(String symbol, Exception e) {
+    return redisTemplate.opsForValue().get("last_price_" + symbol);
+}
