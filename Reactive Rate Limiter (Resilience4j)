@@ -1,0 +1,19 @@
+@Service
+public class OrderRateLimiter {
+    private final RateLimiter rateLimiter;
+
+    public OrderRateLimiter() {
+        RateLimiterConfig config = RateLimiterConfig.custom()
+                .limitRefreshPeriod(Duration.ofSeconds(1))
+                .limitForPeriod(50)
+                .timeoutDuration(Duration.ZERO) // Fail fast if limit exceeded
+                .build();
+        this.rateLimiter = RateLimiter.of("orderService", config);
+    }
+
+    public <T> Mono<T> decorate(Mono<T> publisher) {
+        return RateLimiterOperator.of(rateLimiter).apply(publisher)
+                .onErrorResume(RequestNotPermitted.class, 
+                    e -> Mono.error(new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Rate limit exceeded")));
+    }
+}
