@@ -1,0 +1,7 @@
+@GetMapping(value = "/stream/{symbol}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+public Flux<MarketData> streamWithBackpressure(@PathVariable String symbol) {
+    return marketDataService.getLiveMarketData(symbol)
+            .onBackpressureLatest() // Drop old updates if client is slow
+            .sample(Duration.ofMillis(100)) // Send at most 10 updates per second
+            .doOnError(e -> log.error("Streaming error for {}: {}", symbol, e.getMessage()));
+}
