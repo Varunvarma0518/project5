@@ -1,0 +1,14 @@
+public class OrderBook {
+    // Key: Price, Value: List of Orders at that price (FIFO)
+    private final TreeMap<Double, LinkedList<Order>> buyOrders = new TreeMap<>(Collections.reverseOrder());
+    private final TreeMap<Double, LinkedList<Order>> sellOrders = new TreeMap<>();
+
+    public synchronized void addOrder(Order order) {
+        TreeMap<Double, LinkedList<Order>> book = (order.Side() == Side.BUY) ? buyOrders : sellOrders;
+        book.computeIfAbsent(order.getPrice(), k -> new LinkedList<>()).addLast(order);
+    }
+
+    public Optional<Order> getBestBid() {
+        return Optional.ofNullable(buyOrders.firstEntry()).map(e -> e.getValue().peekFirst());
+    }
+}
