@@ -1,0 +1,6 @@
+@PostMapping("/orders")
+public Mono<OrderResponse> placeOrder(@RequestBody OrderRequest request) {
+    return tradingService.validate(request)
+            .flatMap(matchingEngine::match)
+            .map(result -> new OrderResponse("SUCCESS", result));
+}
